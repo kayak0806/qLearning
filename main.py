@@ -1,51 +1,66 @@
-include math
+import random
 
-# possible states: range(0,100)
-# possible actions: -1,0,1
+rooms = 8
+goal = 2
 
-tempStart = 90
-tempGoal  = 50
-tempNow   = tempStart
-
-y = .5
-alpha = .5
-
-Q = dict() #Q(action,state) = value
-
-def reward(a,s):
-	return -(tempGoal - (s+a))
-
-def transition(a,s):
-	return s+a
-
-def actions(s):
-	if s<=0:
-		return {0,1}
-	if s>=100:
-		return {-1,0}
-	return {-1,0,1}
-
-def randomize(a):
-	return math.random()
-
-def step(s):
-	next = []
-	for b in actions(s):
-		next.append((Q.get((b,transition(b,s)),0),b))
-	return max(next)[1]		
-
-action = 0
-for i in range(100):
-	'''update'''
-	# Q(a,s) = (1-alpha)*Q(a,s)+alpha*[ reward(a,s)+y*maxQ(b,s') ]
-	# Q(a,s) = reward(a,s)+maxQ(b,s')
-	old = Q.get((action,tempNow),0)
-	new = reward(action,tempNow) + y*step(tempNow)
-	Q[(action,tempNow)] =  (1-alpha)*old + alpha*new
-
-	tempNow = transition(action,tempNow)
-	print tempNow
-	action = step(tempNow)
+gamma = 0.5
+alpha = 0.5
 
 
+reward = {
+(0,0):-1,(0,3):0,(0,7):-10,
+(1,1):-1,(1,2):0,(1,7):-10,
+(2,1):0,(2,2):-1,(2,4):0,
+(3,0):0,(3,1):0,(3,3):-1,(3,4):0,(3,5):0,
+(4,2):0,(4,3):0,(4,4):-1,(4,5):0,(4,6):10,(4,7):-10,
+(5,3):0,(5,4):0,(5,5):-1,
+(6,4):0,(6,6):10,
+(7,0):0,(7,1):0,(7,4):0,(7,7):-10}
+
+def getActions(room):
+	actions = []
+	for r in range(rooms):
+		if (room,r) in reward:
+			actions.append( r )
+	return actions
+
+Q = dict()
+
+for i in range(5):
+	# make a move
+	# pos = random.randint(0,rooms-1)
+	pos = 0
+	lenth = 0
+	while (pos != 6):
+		lenth+=1
+		print pos
+		actions = getActions(pos)
+		best = []
+		qbest = None
+		for r in actions:
+			rq = Q.setdefault((pos,r),0)
+			if rq>qbest:
+				qbest = rq
+				best = [r]
+			elif rq==qbest:
+				best.append(r)
+		next = random.choice(best)
+
+		'''
+		in real life, this is where you'd move.
+		next would be where you actually ended up.
+		reward would be a measured reward, not from a table.
+		'''
+
+		nextActions = getActions(next)
+		nqbest = None
+		for r in nextActions:
+			rq = Q.setdefault( (next,r), 0 )
+			nqbest = max(nqbest,rq)
+
+		Q[(pos,next)] = Q[(pos,next)]+alpha*(reward[(pos,next)]+gamma*nqbest-Q[(pos,next)])
+
+		pos = next
+	print 'trial',i,' done in ', lenth
+	
 
